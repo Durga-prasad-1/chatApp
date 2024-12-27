@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
@@ -12,7 +12,7 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 
 // Connect to MongoDB
-mongoose.connect('mongodb://127.0.0.1:27017/chatApp', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect('mongodb://127.0.0.1:27017/chatApp')
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
 
