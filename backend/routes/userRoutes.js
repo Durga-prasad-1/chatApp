@@ -1,70 +1,40 @@
-require('dotenv').config();
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const User = require("../models/User");
 
-// Register a new user
-router.post('/register', async (req, res) => {
-    const { username,email, password } = req.body;
-
-    try {
-        // Check if user already exists
-        let user = await User.findOne({ username });
-        if (user) {
-            return res.status(400).json({ msg: 'User already exists' });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        // Create new user
-        user = new User({ username,email, password:hashedPassword });
-        await user.save();
-
-        res.status(201).json({ msg: 'User registered successfully' });
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
+// User login or register
+router.post("/login", async (req, res) => {
+  const { userId } = req.body;
+  try {
+    let user = await User.findOne({ userId });
+    if (!user) {
+      // Register new user if they don't exist
+      user = new User({ userId });
+      await user.save();
     }
+    res.status(200).json({ success: true, userId });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Login failed" });
+  }
 });
-
-router.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({msg:'Username and password are required'});
-    }
-
+// User registration
+router.post("/register", async (req, res) => {
+    const { userId } = req.body;
+  
     try {
-        // Find the user by username
-        const user = await User.findOne({ username });
-
-        // If user not found
-        if (!user) {
-            return res.status(400).json({msg:'Invalid username or password'});
-        }
-
-        // Compare the given password with the hashed password in DB
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-            return res.status(400).json({msg:'Invalid username or password'});
-        }
-
-        // Create JWT token using username and _id
-        const token = jwt.sign(
-            { username: user.username, _id: user._id },
-            process.env.JWT_SECRET,  // Ensure this is set in your .env file
-            { expiresIn: '1h' }  // Optional: Set token expiration
-        );
-
-        // Send response with the JWT token
-        res.json({ token });
-
+      const existingUser = await User.findOne({ userId });
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: "User ID already exists" });
+      }
+  
+      const newUser = new User({ userId });
+      await newUser.save();
+  
+      res.status(201).json({ success: true, message: "User registered successfully", userId });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({msg:'Server error'});
+      res.status(500).json({ success: false, error: "Registration failed" });
     }
-});
+  });
+  
 
 module.exports = router;
